@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+{% block title %}Borrowers — LoanMgmt{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h1 class="h3 mb-0">Borrowers</h1>
+        <small class="text-muted">Total: {{ count }}</small>
+      </div>
+      <div>
+        <button class="btn btn-primary me-2"
+                data-bs-toggle="modal"
+                data-bs-target="#addBorrowerModal">
+          <i class="bi bi-plus-lg"></i> Add Borrower
+        </button>
+        <a href="{% url 'borrowers:borrower-export' %}"
+           class="btn btn-outline-secondary">
+          <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export Excel
+        </a>
+      </div>
+    </div>
+
+    <input id="borrowerSearch"
+           type="text"
+           class="form-control mb-3"
+           placeholder="Search borrowers…">
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle" id="borrowerTable">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Region</th>
+            <th class="text-end">Actions</th>
+            <th class="text-end">Loan</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in borrowers %}
+          <tr>
+            <td>{{ b.first_name }} {{ b.last_name }}</td>
+            <td>{{ b.phone_number.as_international|default:"—" }}</td>
+            <td>{{ b.email }}</td>
+            <td>{{ b.get_region_display }}</td>
+            <td class="text-end">
+              <a href="{% url 'borrowers:borrower-detail' b.pk %}"
+                 class="btn btn-sm btn-light me-1">
+                <i class="bi bi-eye-fill text-success"></i>
+              </a>
+              <a href="{% url 'borrowers:borrower-update' b.pk %}"
+                 class="btn btn-sm btn-light me-1">
+                <i class="bi bi-pencil-fill text-warning"></i>
+              </a>
+            </td>
+            <td class="text-end">
+              <a href="{% url 'loans:loan-create' %}?borrower={{ b.pk }}"
+                 class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Loan
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center py-4">
+              No borrowers found.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add Borrower Modal -->
+<div class="modal fade" id="addBorrowerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <form method="post"
+            enctype="multipart/form-data"
+            action="{% url 'borrowers:borrower-create' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Add New Borrower</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Personal Information -->
+          <h6><i class="bi bi-person-circle"></i> Personal Information</h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              {{ form.first_name.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.first_name|add_class:"form-control" }}
+            </div>
+            <div class="col-md-3">
+              {{ form.last_name.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.last_name|add_class:"form-control" }}
+            </div>
+            <div class="col-md-3">
+              {{ form.phone_number.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.phone_number|add_class:"form-control" }}
+            </div>
+            <div class="col-md-3">
+              {{ form.email.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.email|add_class:"form-control" }}
+            </div>
+            <div class="col-12">
+              {{ form.address.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.address|add_class:"form-control" }}
+            </div>
+            <div class="col-md-4">
+              {{ form.region.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.region|add_class:"form-select" }}
+            </div>
+          </div>
+
+          <!-- Customer Identification -->
+          <h6><i class="bi bi-shield-lock-fill"></i> Customer Identification</h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              {{ form.id_doc_type.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.id_doc_type|add_class:"form-select" }}
+            </div>
+            <div class="col-md-3">
+              {{ form.id_doc_number.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.id_doc_number|add_class:"form-control" }}
+            </div>
+            <div class="col-md-3">
+              {{ form.id_doc_expiry.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.id_doc_expiry|add_class:"form-control" }}
+            </div>
+            <div class="col-md-3">
+              {{ form.id_doc_file.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.id_doc_file|add_class:"form-control" }}
+            </div>
+          </div>
+
+          <!-- Guarantor Information -->
+          <h6><i class="bi bi-person-lines-fill"></i> Guarantor Information</h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              {{ form.guarantor_name.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.guarantor_name|add_class:"form-control" }}
+            </div>
+            <div class="col-md-4">
+              {{ form.guarantor_relationship.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.guarantor_relationship|add_class:"form-control" }}
+            </div>
+            <div class="col-md-4">
+              {{ form.guarantor_phone.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.guarantor_phone|add_class:"form-control" }}
+            </div>
+            <div class="col-12">
+              {{ form.guarantor_address.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.guarantor_address|add_class:"form-control" }}
+            </div>
+          </div>
+
+          <!-- Guarantor Identification -->
+          <h6><i class="bi bi-shield-shaded"></i> Guarantor Identification</h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              {{ form.guarantor_id_type.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.guarantor_id_type|add_class:"form-select" }}
+            </div>
+            <div class="col-md-3">
+              {{ form.guarantor_id_number.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.guarantor_id_number|add_class:"form-control" }}
+            </div>
+            <div class="col-md-3">
+              {{ form.guarantor_id_expiry.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.guarantor_id_expiry|add_class:"form-control" }}
+            </div>
+            <div class="col-md-3">
+              {{ form.guarantor_id_file.label_tag }}<span class="text-danger">*</span><br>
+              {{ form.guarantor_id_file|add_class:"form-control" }}
+            </div>
+          </div>
+
+          <!-- Additional Documents -->
+          <h6><i class="bi bi-folder-fill"></i> Additional Documents</h6>
+          <div class="mb-4">
+            {{ form.additional_docs.label_tag }}<br>
+            {{ form.additional_docs|add_class:"form-control" }}
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button"
+                  class="btn btn-outline-secondary"
+                  data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Borrower</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Live search filter
+  document.getElementById('borrowerSearch').addEventListener('input', function(){
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('#borrowerTable tbody tr').forEach(r => {
+      r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+</script>
+{% endblock %}

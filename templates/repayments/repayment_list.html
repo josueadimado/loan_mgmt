@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}
+  Repayments — LoanMgmt
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <h2 class="mb-4">Repayment List</h2>
+
+  <!-- Date Range Filter Form -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Filter Repayments</h5>
+      <form method="get" class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label fw-medium">Start Date</label>
+          <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-medium">End Date</label>
+          <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary me-2">Filter</button>
+          <a href="{% url 'repayments:repayment-list' %}" class="btn btn-outline-secondary">Clear</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Repayments Table -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Repayments ({{ count }})</h5>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>Loan ID</th>
+              <th>Borrower</th>
+              <th>Loan Type</th>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Currency</th>
+              <th>Method</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for repayment in repayments %}
+            <tr>
+              <td>{{ repayment.loan.id }}</td>
+              <td>{{ repayment.loan.borrower.first_name }} {{ repayment.loan.borrower.last_name }}</td>
+              <td>{{ repayment.loan.product.name|default:"-" }}</td>
+              <td>{{ repayment.date|date:"Y-m-d" }}</td>
+              <td>{{ repayment.amount|floatformat:2|intcomma }}</td>
+              <td>{{ repayment.loan.currency }}</td>
+              <td>{{ repayment.method|capfirst }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center py-4">No repayments found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mt-4">
+    <a href="{% url 'loans:loan-list' %}" class="btn btn-outline-secondary">Back to Loans</a>
+    <a href="{% url 'repayments:repayment-create' %}" class="btn btn-success">Add Repayment</a>
+  </div>
+</div>
+{% endblock %}

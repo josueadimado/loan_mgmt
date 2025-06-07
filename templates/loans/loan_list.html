@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Loans — LoanMgmt{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h1 class="h2">Loans</h1>
+      <small class="text-muted">Total: {{ count }}</small>
+    </div>
+    <div>
+      <a href="{% url 'loans:loan-create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Issue Loan
+      </a>
+      <a href="{% url 'loans:loan-export' %}" class="btn btn-outline-secondary ms-2">
+        <i class="bi bi-file-earmark-spreadsheet"></i> Export
+      </a>
+    </div>
+  </div>
+
+  <input id="loanSearch"
+         type="text"
+         class="form-control mb-3"
+         placeholder="Search loans…">
+
+  <div class="table-responsive">
+    <table class="table table-hover align-middle" id="loanTable">
+      <thead class="table-light">
+        <tr>
+          <th>Customer</th>
+          <th>Principal</th>
+          <th>Total to Pay</th>
+          <th>Amount Paid</th>
+          <th>Remaining</th>
+          <th>Currency</th>
+          <th>Rate%</th>
+          <th>Status</th>
+          <th>Due Date</th>
+          <th>Type</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for loan in loans %}
+        <tr>
+          <td>{{ loan.borrower }}</td>
+          <td>₵{{ loan.principal|floatformat:2|intcomma }}</td>
+          <td>₵{{ loan.total_to_pay|floatformat:2|intcomma }}</td>
+          <td>₵{{ loan.total_paid|floatformat:2|intcomma }}</td>
+          <td>₵{{ loan.remaining|floatformat:2|intcomma }}</td>
+          <td>{{ loan.currency }}</td>
+          <td>{{ loan.interest_rate|floatformat:2 }}%</td>
+          <td>
+            <span class="badge 
+              {% if loan.status == 'active' %}bg-success
+              {% elif loan.status == 'overdue' %}bg-danger
+              {% else %}bg-secondary{% endif %}">
+              {{ loan.status|capfirst }}
+            </span>
+          </td>
+          <td>{{ loan.due_date|date:"Y-m-d" }}</td>
+          <td>{{ loan.product_name }}</td>
+          <td class="text-end">
+            <div class="dropdown dropstart">
+              <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-three-dots-vertical"></i>
+              </button>
+              <ul class="dropdown-menu">
+                <li>
+                  <a class="dropdown-item" href="{% url 'loans:loan-detail' loan.obj.pk %}">
+                    <i class="bi bi-eye-fill me-1"></i> View
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'loans:loan-update' loan.obj.pk %}">
+                    <i class="bi bi-pencil-fill me-1"></i> Edit
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'loans:loan-history' loan.obj.pk %}">
+                    <i class="bi bi-clock-history me-1"></i> History
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="11" class="text-center py-4">
+            No loans found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.getElementById('loanSearch').addEventListener('input', function(){
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('#loanTable tbody tr').forEach(r => {
+      r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+</script>
+{% endblock %}

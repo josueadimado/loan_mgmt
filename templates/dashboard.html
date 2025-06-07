@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Dashboard — LoanMgmt{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h2">Dashboard</h1>
+    <p class="text-muted">Comprehensive overview of your loan management system’s performance.</p>
+  </div>
+  <div>
+    <a href="{% url 'investors:investor-list' %}" class="btn btn-outline-secondary me-2">Manage Investors</a>
+    <a href="{% url 'loans:loan-create' %}" class="btn btn-dark">
+      <i class="bi bi-plus-lg"></i> New Loan
+    </a>
+  </div>
+</div>
+
+<!-- Exchange Rate Section -->
+<div class="card mb-4 shadow-sm">
+  <div class="card-header">Exchange Rate (USD to GHS)</div>
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <p class="mb-0">
+          Current Rate: 1 USD = {{ current_exchange_rate|floatformat:4 }} GHS
+          {% if rate_outdated %}
+            <span class="text-warning ms-2"><i class="bi bi-exclamation-triangle"></i> Rate outdated (last updated {{ exchange_rate.last_updated|timesince }} ago)</span>
+          {% endif %}
+        </p>
+      </div>
+      <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#exchangeRateModal">
+        Update Rate
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Exchange Rate Modal -->
+<div class="modal fade" id="exchangeRateModal" tabindex="-1" aria-labelledby="exchangeRateModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exchangeRateModalLabel">Update Exchange Rate (USD to GHS)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="update_rate" value="true">
+        <div class="modal-body">
+          {{ rate_form.as_p }}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Save Rate</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <!-- Total Portfolio -->
+  <div class="col-md-3">
+    <div class="card p-3 shadow-sm">
+      <small class="text-muted">Total Portfolio</small>
+      <h3 class="mt-2">₵{{ total_portfolio|floatformat:2|intcomma }}</h3>
+    </div>
+  </div>
+  <!-- Active Loans -->
+  <div class="col-md-3">
+    <div class="card p-3 shadow-sm">
+      <small class="text-muted">Active Loans</small>
+      <h3 class="mt-2">{{ active_loans_count }}</h3>
+      <div>₵{{ active_loans_value|floatformat:2|intcomma }}</div>
+    </div>
+  </div>
+  <!-- Overdue Loans -->
+  <div class="col-md-3">
+    <div class="card p-3 shadow-sm">
+      <small class="text-muted">Overdue Loans</small>
+      <h3 class="mt-2">{{ overdue_loans_count }}</h3>
+      <div>₵{{ overdue_loans_value|floatformat:2|intcomma }}</div>
+    </div>
+  </div>
+  <!-- Default Rate -->
+  <div class="col-md-3">
+    <div class="card p-3 shadow-sm">
+      <small class="text-muted">Default Rate</small>
+      <h3 class="mt-2">{{ default_rate|floatformat:1 }}%</h3>
+    </div>
+  </div>
+  <!-- Loans Due This Month -->
+  <div class="col-md-3">
+    <div class="card p-3 shadow-sm">
+      <small class="text-muted">Loans Due This Month</small>
+      <h3 class="mt-2">{{ loans_due_count }}</h3>
+      <div>₵{{ loans_due_value|floatformat:2|intcomma }}</div>
+    </div>
+  </div>
+  <!-- Loan Approval Rate (This Month) -->
+  <div class="col-md-3">
+    <div class="card p-3 shadow-sm">
+      <small class="text-muted">Loan Approval Rate (This Month)</small>
+      <h3 class="mt-2">{{ loan_approval_rate|floatformat:1 }}%</h3>
+    </div>
+  </div>
+  <!-- Average Loan Amount -->
+  <div class="col-md-3">
+    <div class="card p-3 shadow-sm">
+      <small class="text-muted">Average Loan Amount</small>
+      <h3 class="mt-2">₵{{ average_loan_amount|floatformat:2|intcomma }}</h3>
+    </div>
+  </div>
+  <!-- Interest Earned -->
+  <div class="col-md-3">
+    <div class="card p-3 shadow-sm">
+      <small class="text-muted">Interest Earned</small>
+      <h3 class="mt-2">₵{{ total_interest_earned|floatformat:2|intcomma }}</h3>
+    </div>
+  </div>
+  <!-- Cash Flow -->
+  <div class="col-md-3">
+    <div class="card p-3 shadow-sm">
+      <small class="text-muted">Cash Flow (This Month)</small>
+      <h3 class="mt-2">₵{{ cash_flow|floatformat:2|intcomma }}</h3>
+    </div>
+  </div>
+  <!-- Total Invested -->
+  <div class="col-md-3">
+    <div class="card p-3 shadow-sm">
+      <small class="text-muted">Total Invested</small>
+      <h3 class="mt-2">₵{{ total_invested|floatformat:2|intcomma }}</h3>
+    </div>
+  </div>
+  <!-- Potential Earnings -->
+  <div class="col-md-3">
+    <div class="card p-3 shadow-sm">
+      <small class="text-muted">Potential Earnings (Next Quarter)</small>
+      <h3 class="mt-2">₵{{ potential_earnings|floatformat:2|intcomma }}</h3>
+    </div>
+  </div>
+  <!-- Total Borrowers -->
+  <div class="col-md-3">
+    <div class="card p-3 shadow-sm">
+      <small class="text-muted">Total Borrowers</small>
+      <h3 class="mt-2">{{ total_borrowers }}</h3>
+    </div>
+  </div>
+  <!-- Total Investors -->
+  <div class="col-md-3">
+    <div class="card p-3 shadow-sm">
+      <small class="text-muted">Total Investors</small>
+      <h3 class="mt-2">{{ total_investors }}</h3>
+    </div>
+  </div>
+  <!-- Profit Distributed -->
+  <div class="col-md-3">
+    <div class="card p-3 shadow-sm">
+      <small class="text-muted">Profit Distributed</small>
+      <h3 class="mt-2">₵{{ profit_distributed|floatformat:2|intcomma }}</h3>
+    </div>
+  </div>
+  <!-- Investor Activity (This Month) -->
+  <div class="col-md-3">
+    <div class="card p-3 shadow-sm">
+      <small class="text-muted">Investor Activity (This Month)</small>
+      <h3 class="mt-2">{{ investor_activity_count }} Transactions</h3>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Top Borrowers -->
+  <div class="col-md-6">
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header">Top Borrowers</div>
+      <div class="card-body">
+        <input id="borrowerSearch"
+               type="text"
+               class="form-control mb-3"
+               placeholder="Search borrowers…">
+        <div class="table-responsive">
+          <table id="topBorrowersTable" class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Name</th>
+                <th># Loans</th>
+                <th>Total Due</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for b in top_borrowers %}
+                <tr>
+                  <td>{{ b.first_name }} {{ b.last_name }}</td>
+                  <td>{{ b.loan_count }}</td>
+                  <td>₵{{ b.total_due|floatformat:2|intcomma }}</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="3" class="text-center">No data</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Investors -->
+  <div class="col-md-6">
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header">Top Investors</div>
+      <div class="card-body">
+        <input id="investorSearch"
+               type="text"
+               class="form-control mb-3"
+               placeholder="Search investors…">
+        <div class="table-responsive">
+          <table id="topInvestorsTable" class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Name</th>
+                <th>Funds Available</th>
+                <th>Profit Earned</th>
+                <th>Profit Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for inv in top_investors %}
+                <tr>
+                  <td>{{ inv.first_name }} {{ inv.last_name }}</td>
+                  <td>₵{{ inv.funds_available_ghs|floatformat:2|intcomma }}</td>
+                  <td>₵{{ inv.profit_earned_ghs|floatformat:2|intcomma }}</td>
+                  <td>{{ inv.profit_paid|yesno:"Paid,Unpaid" }}</td>
+                  <td>
+                    <a href="{% url 'investors:investor-detail' inv.id %}" class="btn btn-sm btn-primary">View</a>
+                    {% if inv.profit_earned > 0 and not inv.profit_paid %}
+                      <form method="POST" action="{% url 'dashboard' %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="investor_id" value="{{ inv.id }}">
+                        <input type="hidden" name="mark_profit_paid" value="true">
+                        <button type="submit" class="btn btn-sm btn-success">Mark as Paid</button>
+                      </form>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center">No data</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Borrower table filter
+  document.getElementById('borrowerSearch')
+    .addEventListener('input', function(){
+      const q = this.value.toLowerCase();
+      document
+        .querySelectorAll('#topBorrowersTable tbody tr')
+        .forEach(row => {
+          row.style.display =
+            row.textContent.toLowerCase().includes(q)
+              ? '' : 'none';
+        });
+    });
+
+  // Investor table filter
+  document.getElementById('investorSearch')
+    .addEventListener('input', function(){
+      const q = this.value.toLowerCase();
+      document
+        .querySelectorAll('#topInvestorsTable tbody tr')
+        .forEach(row => {
+          row.style.display =
+            row.textContent.toLowerCase().includes(q)
+              ? '' : 'none';
+        });
+    });
+</script>
+{% endblock %}

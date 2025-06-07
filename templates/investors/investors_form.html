@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}
+{% if investor %}Edit Investor{% else %}Add Investor{% endif %} — LoanWise
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h2 class="h4 mb-4">
+        {% if investor %}Edit{% else %}Add{% endif %} Investor
+      </h2>
+
+      <form method="post" action="" id="investor-form" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        {% if form.errors %}
+          <div class="alert alert-danger">
+            <ul class="mb-0">
+              {% for field in form %}
+                {% for error in field.errors %}
+                  <li>{{ field.label }}: {{ error }} (Field: {{ field.name }}, Value: {{ field.value|default:"<empty>" }})</li>
+                {% endfor %}
+              {% endfor %}
+              {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
+        <!-- Personal Information -->
+        <h6 class="form-section-heading">
+          <i class="bi bi-person-circle"></i> Personal Information
+        </h6>
+        <div class="row g-3 mb-4">
+          <div class="col-md-3">
+            <label class="form-label">
+              {{ form.first_name.label }}
+              {% if form.first_name.field.required %}
+                <span class="required-asterisk">*</span>
+              {% endif %}
+            </label>
+            {{ form.first_name|add_class:"form-control" }}
+            <div class="invalid-feedback">This field is required.</div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">
+              {{ form.last_name.label }}
+              {% if form.last_name.field.required %}
+                <span class="required-asterisk">*</span>
+              {% endif %}
+            </label>
+            {{ form.last_name|add_class:"form-control" }}
+            <div class="invalid-feedback">This field is required.</div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">
+              {{ form.phone_number.label }}
+              {% if form.phone_number.field.required %}
+                <span class="required-asterisk">*</span>
+              {% endif %}
+            </label>
+            {{ form.phone_number }}
+            <div class="invalid-feedback"></div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">
+              {{ form.email.label }}
+            </label>
+            {{ form.email|add_class:"form-control" }}
+            <div class="invalid-feedback">This field is required.</div>
+          </div>
+          <div class="col-12">
+            <label class="form-label">
+              {{ form.address.label }}
+            </label>
+            {{ form.address|add_class:"form-control" }}
+            <div class="invalid-feedback">This field is required.</div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">
+              {{ form.region.label }}
+            </label>
+            {{ form.region|add_class:"form-select" }}
+            <div class="invalid-feedback">This field is required.</div>
+          </div>
+        </div>
+
+        <!-- Investment Details -->
+        <h6 class="form-section-heading">
+          <i class="bi bi-currency-exchange"></i> Investment Details
+        </h6>
+        <div class="row g-3 mb-4">
+          <div class="col-md-3">
+            <label class="form-label">
+              {{ form.currency.label }}
+              {% if form.currency.field.required %}
+                <span class="required-asterisk">*</span>
+              {% endif %}
+            </label>
+            {{ form.currency|add_class:"form-select" }}
+            <div class="invalid-feedback">This field is required.</div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">
+              {{ form.investment_period.label }}
+              {% if form.investment_period.field.required %}
+                <span class="required-asterisk">*</span>
+              {% endif %}
+            </label>
+            {{ form.investment_period|add_class:"form-control" }}
+            <div class="invalid-feedback">This field is required.</div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">
+              {{ form.initial_investment.label }}
+            </label>
+            {{ form.initial_investment|add_class:"form-control" }}
+            <div class="invalid-feedback">This field is required.</div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">
+              {{ form.funds_available.label }}
+            </label>
+            {{ form.funds_available|add_class:"form-control" }}
+            <div class="invalid-feedback">This field is required.</div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">
+              {{ form.created_at.label }}
+              {% if form.created_at.field.required %}
+                <span class="required-asterisk">*</span>
+              {% endif %}
+            </label>
+            {{ form.created_at|add_class:"form-control" }}
+            <div class="invalid-feedback">This field is required.</div>
+          </div>
+        </div>
+
+        <!-- Additional Documents -->
+        <h6 class="form-section-heading">
+          <i class="bi bi-folder-fill"></i> Additional Documents
+        </h6>
+        <div class="mb-4">
+          <label class="form-label">
+            {{ form.id_document.label }}
+          </label>
+          {{ form.id_document|add_class:"form-control" }}
+          <div class="invalid-feedback">This field is required.</div>
+          {% if investor and investor.id_document %}
+            <small class="form-text text-muted">
+              Current file: <a href="{{ investor.id_document.url }}" target="_blank">{{ investor.id_document.name }}</a>
+            </small>
+          {% endif %}
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+          <button type="submit" class="btn btn-primary">
+            {% if investor %}Update{% else %}Create{% endif %}
+          </button>
+          <a href="{% url 'investors:investor-list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Transaction History (Only for Edit) -->
+  {% if investor %}
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h6 class="form-section-heading">
+          <i class="bi bi-clock-history"></i> Transaction History
+        </h6>
+        {% if transactions %}
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Currency</th>
+                <th>Created By</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for transaction in transactions %}
+                <tr>
+                  <td>{{ transaction.date|date:"Y-m-d H:i" }}</td>
+                  <td>{{ transaction.get_transaction_type_display }}</td>
+                  <td>{{ transaction.amount }}</td>
+                  <td>{{ investor.currency }}</td>
+                  <td>{{ transaction.created_by }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="text-muted">No transactions recorded for this investor.</p>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    {% if form.errors %}
+      const errors = {
+        {% for field in form %}
+          {% if field.errors %}
+            '{{ field.name }}': {{ field.errors|safe|escapejs }},
+          {% endif %}
+        {% endfor %}
+        non_field_errors: {{ form.non_field_errors|safe|escapejs }}
+      };
+      console.log('Form errors:', errors);
+    {% endif %}
+
+    // Real-time validation for required fields
+    const form = document.getElementById('investor-form');
+    form.querySelectorAll('input[required], textarea[required], select[required]').forEach(input => {
+      input.addEventListener('input', function() {
+        if (!this.value.trim()) {
+          this.classList.add('is-invalid');
+        } else {
+          this.classList.remove('is-invalid');
+        }
+      });
+      input.addEventListener('change', function() {
+        if (!this.value.trim()) {
+          this.classList.add('is-invalid');
+        } else {
+          this.classList.remove('is-invalid');
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

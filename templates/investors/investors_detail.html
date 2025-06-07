@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}  <!-- Added to fix the error -->
+
+{% block title %}
+Investor Details — LoanWise
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Ensure Navbar Consistency */
+  body {
+    padding-top: 56px;
+  }
+
+  /* Card Styling */
+  .card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  .card-header {
+    background-color: #0d6efd;
+    color: #fff;
+    border-radius: 8px 8px 0 0;
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+  .card-body {
+    padding: 20px;
+  }
+  .card-body p {
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+  }
+  .card-body p strong {
+    color: #212529;
+    font-weight: 500;
+  }
+
+  /* Nested Card for Sections */
+  .nested-card {
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    background-color: #fff;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  }
+  .nested-card .card-header {
+    background-color: #e9ecef;
+    color: #343a40;
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 6px 6px 0 0;
+    padding: 10px 16px;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .nested-card .card-body {
+    padding: 16px;
+  }
+
+  /* Table Styling */
+  .table-container {
+    overflow-x: auto;
+  }
+  .table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 0;
+  }
+  .table th, .table td {
+    padding: 16px;
+    text-align: left;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #e9ecef;
+  }
+  .table th {
+    background-color: #e9ecef;
+    color: #343a40;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+  }
+  .table tbody tr:hover {
+    background-color: #f1f3f5;
+  }
+
+  /* Buttons */
+  .btn-outline-secondary {
+    transition: all 0.3s ease;
+    border-color: #6c757d;
+    color: #6c757d;
+  }
+  .btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+    color: #0d6efd;
+    border-color: #0d6efd;
+  }
+
+  /* Print-Specific Styling */
+  @media print {
+    nav {
+      display: none !important;
+    }
+    .no-print {
+      display: none !important;
+    }
+  }
+
+  /* Mobile Responsiveness */
+  @media (max-width: 767.98px) {
+    .card-header {
+      font-size: 1rem;
+    }
+    .nested-card .card-header {
+      font-size: 0.95rem;
+    }
+    .card-body {
+      padding: 16px;
+    }
+    .card-body p {
+      font-size: 0.9rem;
+    }
+    .table th, .table td {
+      padding: 12px;
+      font-size: 0.85rem;
+    }
+    .table th:nth-child(n+4), .table td:nth-child(n+4) {
+      display: none;
+    }
+    .d-flex h1.h4 {
+      font-size: 1.25rem;
+    }
+    .btn-outline-secondary {
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-3">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h4 mb-0">Investor Details</h1>
+    <a href="{% url 'investors:investor-list' %}" class="btn btn-outline-secondary no-print">
+      Back to Investors
+    </a>
+  </div>
+
+  <!-- Investor Details -->
+  <div class="card">
+    <div class="card-header">
+      <i class="bi bi-person-circle me-2"></i> {{ investor.first_name }} {{ investor.last_name }}
+    </div>
+    <div class="card-body">
+      <!-- Personal Information -->
+      <div class="nested-card">
+        <div class="card-header">
+          <i class="bi bi-person-fill me-2"></i> Personal Information
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <p><strong>First Name:</strong> {{ investor.first_name }}</p>
+            </div>
+            <div class="col-md-3">
+              <p><strong>Last Name:</strong> {{ investor.last_name }}</p>
+            </div>
+            <div class="col-md-3">
+              <p><strong>Phone Number:</strong> {{ investor.phone_number|default:"N/A" }}</p>
+            </div>
+            <div class="col-md-3">
+              <p><strong>Email:</strong> {{ investor.email|default:"N/A" }}</p>
+            </div>
+            <div class="col-12">
+              <p><strong>Address:</strong> {{ investor.address|default:"N/A" }}</p>
+            </div>
+            <div class="col-md-4">
+              <p><strong>Region:</strong> {{ investor.get_region_display|default:"N/A" }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Investment Details -->
+      <div class="nested-card">
+        <div class="card-header">
+          <i class="bi bi-currency-exchange me-2"></i> Investment Details
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <p><strong>Currency:</strong> {{ investor.currency }}</p>
+            </div>
+            <div class="col-md-3">
+              <p><strong>Investment Period:</strong> {{ investor.investment_period }} months</p>
+            </div>
+            <div class="col-md-3">
+              <p><strong>Total Invested:</strong> {{ investor.total_invested }}</p>
+            </div>
+            <div class="col-md-3">
+              <p><strong>Funds Available:</strong> {{ investor.funds_available }}</p>
+            </div>
+            <div class="col-md-3">
+              <p><strong>Profit Earned:</strong> {{ investor.profit_earned }}</p>
+            </div>
+            <div class="col-md-3">
+              <p><strong>Created By:</strong> {{ investor.created_by }}</p>
+            </div>
+            <div class="col-md-3">
+              <p><strong>Created At:</strong> {{ investor.created_at|date:"Y-m-d H:i" }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top-Up Form -->
+      <div class="nested-card" id="topup-form">
+        <div class="card-header">
+          <i class="bi bi-plus-circle me-2"></i> Add Top-Up
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            {% if topup_form.errors %}
+              <div class="alert alert-danger">
+                <ul class="mb-0">
+                  {% for field in topup_form %}
+                    {% for error in field.errors %}
+                      <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                  {% endfor %}
+                  {% for error in topup_form.non_field_errors %}
+                    <li>{{ error }}</li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">{{ topup_form.transaction_type.label }}</label>
+                {{ topup_form.transaction_type|add_class:"form-select" }}
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">{{ topup_form.amount.label }}</label>
+                {{ topup_form.amount|add_class:"form-control" }}
+                <small class="form-text text-muted">{{ topup_form.amount.help_text }}</small>
+              </div>
+              <div class="col-md-3 align-self-end">
+                <button type="submit" class="btn btn-primary">Add Top-Up</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Transaction History -->
+      <div class="nested-card">
+        <div class="card-header">
+          <i class="bi bi-clock-history me-2"></i> Transaction History
+        </div>
+        <div class="card-body">
+          {% if transactions %}
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Currency</th>
+                    <th>Created By</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for transaction in transactions %}
+                    <tr>
+                      <td>{{ transaction.date|date:"Y-m-d H:i" }}</td>
+                      <td>{{ transaction.get_transaction_type_display }}</td>
+                      <td>{{ transaction.amount }}</td>
+                      <td>{{ investor.currency }}</td>
+                      <td>{{ transaction.created_by }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="text-muted">No transactions recorded for this investor.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

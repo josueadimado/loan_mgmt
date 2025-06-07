@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}
+  Loan #{{ loan.id }} History — LoanMgmt
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <h2 class="mb-4">Loan #{{ loan.id }} Repayment History</h2>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Loan Summary</h5>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <strong>Borrower:</strong> {{ loan.borrower.first_name }} {{ loan.borrower.last_name }}
+        </div>
+        <div class="col-md-4">
+          <strong>Total Expected Amount:</strong> {{ loan.currency }}{{ loan.get_total_to_pay|floatformat:2|intcomma }}
+        </div>
+        <div class="col-md-4">
+          <strong>Total Paid:</strong> {{ loan.currency }}{{ loan.get_total_paid|floatformat:2|intcomma }}
+        </div>
+        <div class="col-md-4">
+          <strong>Remaining Balance:</strong> {{ loan.currency }}{{ loan.remaining_balance|floatformat:2|intcomma }}
+        </div>
+        <div class="col-md-4">
+          <strong>Due Date:</strong> {{ loan.due_date|date:"Y-m-d" }}
+        </div>
+        <div class="col-md-4">
+          <strong>Current Date:</strong> {{ current_date|date:"Y-m-d" }}
+        </div>
+        <div class="col-md-4">
+          <strong>Status:</strong> 
+          <span class="badge 
+            {% if loan.status == 'active' %}bg-success
+            {% elif loan.status == 'overdue' %}bg-danger
+            {% else %}bg-secondary{% endif %}">
+            {{ loan.status|capfirst }}
+          </span>
+        </div>
+      </div>
+      <!-- Add a warning if status is "Paid" but total paid doesn't match -->
+      {% if loan.status == 'paid' and total_paid != total_to_pay %}
+      <div class="alert alert-warning mt-3">
+        <strong>Warning:</strong> The loan status is "Paid," but the total paid ({{ loan.currency }}{{ total_paid|floatformat:2|intcomma }}) does not match the total expected amount ({{ loan.currency }}{{ total_to_pay|floatformat:2|intcomma }}). Please verify the repayments or update the loan status.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Repayments</h5>
+
+      <!-- Filter Form -->
+      <div class="mb-3">
+        <form id="repaymentFilterForm" class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label fw-medium">Start Date</label>
+            <input type="date" id="startDate" class="form-control">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-medium">End Date</label>
+            <input type="date" id="endDate" class="form-control">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-medium">Min Amount</label>
+            <input type="number" id="minAmount" class="form-control" placeholder="Min Amount">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-medium">Max Amount</label>
+            <input type="number" id="maxAmount" class="form-control" placeholder="Max Amount">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-medium">Method</label>
+            <select id="methodFilter" class="form-select">
+              <option value="">All</option>
+              <option value="cash">Cash</option>
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="mobile_money">Mobile Money</option>
+            </select>
+          </div>
+          <div class="col-md-3 d-flex align-items-end">
+            <button type="button" id="clearFilters" class="btn btn-outline-secondary">Clear Filters</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="table-responsive">
+        <table id="repaymentsTable" class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Method</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for repayment in repayments %}
+            <tr>
+              <td>{{ repayment.date|date:"Y-m-d" }}</td>
+              <td>{{ loan.currency }}{{ repayment.amount|floatformat:2|intcomma }}</td>
+              <td>{{ repayment.method|capfirst }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3" class="text-center py-4">No repayments found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center">
+    <a href="{% url 'loans:loan-list' %}" class="btn btn-outline-secondary">Back to Loan List</a>
+    <a href="{% url 'loans:loan-detail' loan.id %}" class="btn btn-info">View Loan Details</a>
+    <a href="{% url 'loans:loan-update' loan.id %}" class="btn btn-primary">Edit Loan</a>
+    {% if loan.status != 'paid' %}
+      <a href="{% url 'repayments:repayment-create' %}?loan_id={{ loan.id }}" class="btn btn-success">Make Payment</a>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const startDateInput = document.getElementById('startDate');
+  const endDateInput = document.getElementById('endDate');
+  const minAmountInput = document.getElementById('minAmount');
+  const maxAmountInput = document.getElementById('maxAmount');
+  const methodFilter = document.getElementById('methodFilter');
+  const clearFiltersBtn = document.getElementById('clearFilters');
+  const tableRows = document.querySelectorAll('#repaymentsTable tbody tr');
+
+  function filterTable() {
+    const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+    const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+    const minAmount = parseFloat(minAmountInput.value) || 0;
+    const maxAmount = parseFloat(maxAmountInput.value) || Infinity;
+    const method = methodFilter.value.toLowerCase();
+
+    tableRows.forEach(row => {
+      const dateCell = row.cells[0].textContent;
+      const amountCell = parseFloat(row.cells[1].textContent.replace(/[^0-9.-]+/g, ""));
+      const methodCell = row.cells[2].textContent.toLowerCase();
+
+      const rowDate = new Date(dateCell);
+      const dateMatch = (!startDate || rowDate >= startDate) && (!endDate || rowDate <= endDate);
+      const amountMatch = amountCell >= minAmount && amountCell <= maxAmount;
+      const methodMatch = !method || methodCell.includes(method);
+
+      row.style.display = (dateMatch && amountMatch && methodMatch) ? '' : 'none';
+    });
+  }
+
+  startDateInput.addEventListener('change', filterTable);
+  endDateInput.addEventListener('change', filterTable);
+  minAmountInput.addEventListener('input', filterTable);
+  maxAmountInput.addEventListener('input', filterTable);
+  methodFilter.addEventListener('change', filterTable);
+
+  clearFiltersBtn.addEventListener('click', function() {
+    startDateInput.value = '';
+    endDateInput.value = '';
+    minAmountInput.value = '';
+    maxAmountInput.value = '';
+    methodFilter.value = '';
+    filterTable();
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}
+  Loan #{{ loan.id }} Details — LoanMgmt
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <h2 class="mb-4">Loan #{{ loan.id }} Details</h2>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Loan Information</h5>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <strong>Borrower:</strong> {{ loan.borrower.first_name }} {{ loan.borrower.last_name }}
+        </div>
+        <div class="col-md-4">
+          <strong>Product:</strong> {{ loan.product.name|default:"-" }}
+        </div>
+        <div class="col-md-4">
+          <strong>Principal:</strong> {{ loan.currency }}{{ loan.principal|floatformat:2|intcomma }}
+        </div>
+        <div class="col-md-4">
+          <strong>Currency:</strong> {{ loan.currency }}
+        </div>
+        <div class="col-md-4">
+          <strong>Interest Rate (Monthly):</strong> {{ loan.interest_rate|floatformat:2 }}%
+        </div>
+        <div class="col-md-4">
+          <strong>Original Term:</strong> {{ loan.original_term_months }} months
+        </div>
+        <div class="col-md-4">
+          <strong>Remaining Term:</strong> {{ loan.get_remaining_term_months }} months
+        </div>
+        <div class="col-md-4">
+          <strong>Start Date:</strong> {{ loan.start_date|date:"Y-m-d" }}
+        </div>
+        <div class="col-md-4">
+          <strong>End Date:</strong> {{ loan.get_due_date|date:"Y-m-d" }}
+        </div>
+        <div class="col-md-4">
+          <strong>Monthly Interest Payment:</strong> {{ loan.currency }}{{ loan.get_monthly_interest_payment|floatformat:2|intcomma }}
+        </div>
+        <div class="col-md-4">
+          <strong>Total Interest (Full Term):</strong> {{ loan.currency }}{{ loan.get_total_interest|floatformat:2|intcomma }}
+        </div>
+        <div class="col-md-4">
+          <strong>Total Expected Amount (Full Term):</strong> {{ loan.currency }}{{ loan.get_total_to_pay|floatformat:2|intcomma }}
+        </div>
+        <div class="col-md-4">
+          <strong>Remaining Interest:</strong> {{ loan.currency }}{{ loan.get_remaining_interest|floatformat:2|intcomma }}
+        </div>
+        <div class="col-md-4">
+          <strong>Remaining Amount to Pay:</strong> {{ loan.currency }}{{ loan.get_remaining_amount_to_pay|floatformat:2|intcomma }}
+        </div>
+        <div class="col-md-4">
+          <strong>Total Paid:</strong> {{ loan.currency }}{{ loan.get_total_paid|floatformat:2|intcomma }}
+        </div>
+        <div class="col-md-4">
+          <strong>Status:</strong>
+          <span class="badge 
+            {% if loan.status == 'active' %}bg-success
+            {% elif loan.status == 'overdue' %}bg-danger
+            {% elif loan.status == 'paid' %}bg-primary
+            {% else %}bg-secondary{% endif %}">
+            {{ loan.status|capfirst }}
+          </span>
+        </div>
+        <div class="col-md-4">
+          <strong>Rollover Status:</strong>
+          {% if loan.is_rollover %}
+            <span class="badge bg-warning">Rolled Over ({{ loan.rollover_count }} time{{ loan.rollover_count|pluralize }})</span>
+          {% else %}
+            <span class="badge bg-info">Not Rolled Over</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Repayment Schedule</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead class="table-light">
+            <tr>
+              <th>Month</th>
+              <th>Interest Payment</th>
+              <th>Due Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in schedule %}
+            <tr>
+              <td>{{ item.month }}</td>
+              <td>{{ loan.currency }}{{ item.interest|floatformat:2|intcomma }}</td>
+              <td>{{ item.due_date|date:"Y-m-d" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3" class="text-center py-4">No repayment schedule available.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center">
+    <a href="{% url 'loans:loan-list' %}" class="btn btn-outline-secondary">Back to Loan List</a>
+    <a href="{% url 'loans:loan-update' loan.id %}" class="btn btn-primary">Edit Loan</a>
+    <a href="{% url 'loans:loan-history' loan.id %}" class="btn btn-info">View Repayment History</a>
+    <a href="{% url 'repayments:repayment-create' %}?loan_id={{ loan.id }}" class="btn btn-success">Make Payment</a>
+  </div>
+</div>
+{% endblock %}

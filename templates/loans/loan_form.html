@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}
+  {% if form.instance.pk %}Edit Loan{% else %}Issue Loan{% endif %} — LoanMgmt
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="card shadow-lg mx-auto border-0" style="max-width: 900px;">
+    <div class="card-header bg-primary text-white">
+      <h3 class="card-title mb-0">
+        {% if form.instance.pk %}Edit Loan{% else %}Issue Loan{% endif %}
+      </h3>
+    </div>
+    <div class="card-body p-4">
+      <form method="post" id="loan-form">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <!-- Section: Loan Details -->
+        <h5 class="mb-4 text-muted">Loan Details</h5>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="form-label fw-medium">
+              Borrower
+              <span class="text-danger">*</span>
+            </label>
+            <div class="position-relative">
+              <input type="text" id="borrower-search" class="form-control" placeholder="Search for a borrower..." autocomplete="off"
+                value="{% if form.instance.pk %}{{ form.instance.borrower.first_name }} {{ form.instance.borrower.last_name }}{% endif %}">
+              <input type="hidden" id="borrower-id" name="borrower"
+                value="{% if form.instance.pk %}{{ form.instance.borrower.id }}{% endif %}">
+              <div id="borrower-suggestions" class="dropdown-menu shadow-sm border-0" style="max-height: 200px; overflow-y: auto; width: 100%;"></div>
+            </div>
+            {% if form.borrower.errors %}
+              <div class="text-danger small">{{ form.borrower.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-medium">
+              Product
+              <span class="text-danger">*</span>
+            </label>
+            {{ form.product|add_class:"selectpicker"|attr:"data-live-search:true" }}
+            {% if form.product.errors %}
+              <div class="text-danger small">{{ form.product.errors }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Section: Financial Details -->
+        <h5 class="mb-4 text-muted">Financial Details</h5>
+        <div class="row g-3 mb-4">
+          <div class="col-md-3">
+            <label class="form-label fw-medium">
+              Principal
+              <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text" id="currency-symbol">₵</span>
+              {{ form.principal|add_class:"form-control" }}
+            </div>
+            {% if form.principal.errors %}
+              <div class="text-danger small">{{ form.principal.errors }}</div>
+            {% endif %}
+          </div>
+          {% if form.instance.pk %}
+            <div class="col-md-3">
+              <label class="form-label fw-medium">
+                Additional Principal
+              </label>
+              <div class="input-group">
+                <span class="input-group-text" id="currency-symbol">{{ form.instance.currency }}</span>
+                {{ form.additional_principal|add_class:"form-control" }}
+              </div>
+              <small class="text-muted">{{ form.additional_principal.help_text }}</small>
+              {% if form.additional_principal.errors %}
+                <div class="text-danger small">{{ form.additional_principal.errors }}</div>
+              {% endif %}
+            </div>
+          {% endif %}
+          <div class="col-md-3">
+            <label class="form-label fw-medium">
+              Currency
+              <span class="text-danger">*</span>
+            </label>
+            {{ form.currency|add_class:"form-select" }}
+            {% if form.currency.errors %}
+              <div class="text-danger small">{{ form.currency.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-medium">
+              Interest Rate
+              <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              {{ form.interest_rate|add_class:"form-control" }}
+              <span class="input-group-text">%</span>
+            </div>
+            {% if form.interest_rate.errors %}
+              <div class="text-danger small">{{ form.interest_rate.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-medium">
+              Term (Months)
+              <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              {{ form.term_months|add_class:"form-control" }}
+              <span class="input-group-text">Months</span>
+            </div>
+            <small class="text-muted">Default is 3 months; you can set an additional period if needed.</small>
+            {% if form.term_months.errors %}
+              <div class="text-danger small">{{ form.term_months.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-medium">
+              Start Date
+              <span class="text-danger">*</span>
+            </label>
+            {{ form.start_date|add_class:"form-control" }}
+            {% if form.start_date.errors %}
+              <div class="text-danger small">{{ form.start_date.errors }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Section: Loan Summary -->
+        <h5 class="mb-4 text-muted">Loan Summary</h5>
+        <div class="row g-3 mb-4">
+          <div class="col-md-3">
+            <label class="form-label fw-medium">Start Date</label>
+            <p id="summary-start-date" class="mb-0">-</p>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-medium">End Date</label>
+            <p id="summary-end-date" class="mb-0">-</p>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-medium">Monthly Interest Payment</label>
+            <p id="summary-monthly-interest" class="mb-0">-</p>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-medium">Total Expected Amount</label>
+            <p id="summary-total-expected" class="mb-0">-</p>
+          </div>
+        </div>
+
+        <!-- Section: Additional Information -->
+        <h5 class="mb-4 text-muted">Additional Information</h5>
+        <div class="row g-3 mb-4">
+          <div class="col-12">
+            <div class="form-check form-switch">
+              {{ form.is_rollover|add_class:"form-check-input" }}
+              <label class="form-check-label" for="{{ form.is_rollover.id_for_label }}">
+                {{ form.is_rollover.label }}
+              </label>
+              {% if form.is_rollover.errors %}
+                <div class="text-danger small">{{ form.is_rollover.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-medium">
+              Description
+            </label>
+            {{ form.description|add_class:"form-control" }}
+            {% if form.description.errors %}
+              <div class="text-danger small">{{ form.description.errors }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="d-flex justify-content-end gap-2">
+          <a href="{% url 'loans:loan-list' %}" class="btn btn-outline-secondary">
+            Cancel
+          </a>
+          <button type="submit" class="btn btn-primary">
+            {% if form.instance.pk %}Update Loan{% else %}Issue Loan{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize Bootstrap Select for the product field
+  console.log('Initializing selectpicker...');
+  $('.selectpicker').selectpicker({
+    liveSearch: true,
+    noneSelectedText: 'Select a product',
+    selectedTextFormat: 'values'
+  });
+  console.log('Selectpicker initialized:', $('.selectpicker').length);
+
+  // Borrower search functionality
+  const borrowerSearch = document.getElementById('borrower-search');
+  const borrowerIdInput = document.getElementById('borrower-id');
+  const borrowerSuggestions = document.getElementById('borrower-suggestions');
+
+  // Store the initial borrower name and ID for edit mode
+  const initialBorrowerName = borrowerSearch.value;
+  const initialBorrowerId = borrowerIdInput.value;
+  console.log('Initial borrower:', { name: initialBorrowerName, id: initialBorrowerId });
+
+  borrowerSearch.addEventListener('input', function() {
+    const query = this.value.trim();
+    if (query.length < 2) {
+      borrowerSuggestions.innerHTML = '';
+      borrowerSuggestions.style.display = 'none';
+      console.log('Query too short:', query);
+      // Reset to initial borrower if query is cleared
+      if (!query && initialBorrowerId) {
+        this.value = initialBorrowerName;
+        borrowerIdInput.value = initialBorrowerId;
+      } else {
+        borrowerIdInput.value = '';
+      }
+      return;
+    }
+
+    console.log('Fetching borrowers for query:', query);
+    fetch(`/loans/borrowers/search/?q=${encodeURIComponent(query)}`, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => {
+      console.log('Fetch response status:', response.status);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('Borrower search results:', data);
+      borrowerSuggestions.innerHTML = '';
+      if (data.length === 0) {
+        borrowerSuggestions.style.display = 'none';
+        console.log('No borrowers found for query:', query);
+        return;
+      }
+
+      data.forEach(borrower => {
+        const suggestion = document.createElement('div');
+        suggestion.className = 'dropdown-item';
+        suggestion.textContent = `${borrower.first_name} ${borrower.last_name} (ID: ${borrower.id})`;
+        suggestion.dataset.id = borrower.id;
+        suggestion.dataset.name = `${borrower.first_name} ${borrower.last_name}`;
+        suggestion.addEventListener('click', function() {
+          borrowerSearch.value = this.dataset.name;
+          borrowerIdInput.value = this.dataset.id;
+          borrowerSuggestions.innerHTML = '';
+          borrowerSuggestions.style.display = 'none';
+          console.log('Selected borrower:', { name: this.dataset.name, id: this.dataset.id });
+        });
+        borrowerSuggestions.appendChild(suggestion);
+      });
+
+      borrowerSuggestions.style.display = 'block';
+      console.log('Suggestions displayed:', borrowerSuggestions.innerHTML);
+    })
+    .catch(error => {
+      console.error('Error fetching borrowers:', error);
+    });
+  });
+
+  // Hide suggestions when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!borrowerSearch.contains(e.target) && !borrowerSuggestions.contains(e.target)) {
+      borrowerSuggestions.style.display = 'none';
+      // Reset to initial borrower if input is cleared
+      if (!borrowerSearch.value && initialBorrowerId) {
+        borrowerSearch.value = initialBorrowerName;
+        borrowerIdInput.value = initialBorrowerId;
+      }
+    }
+  });
+
+  // Currency change event to update interest rate and currency symbol
+  const currencySelect = document.querySelector('select[name="currency"]');
+  const interestRateInput = document.querySelector('input[name="interest_rate"]');
+  const currencySymbol = document.getElementById('currency-symbol');
+  const principalInput = document.querySelector('input[name="principal"]');
+  const termMonthsInput = document.querySelector('input[name="term_months"]');
+  const startDateInput = document.querySelector('input[name="start_date"]');
+  const summaryStartDate = document.getElementById('summary-start-date');
+  const summaryEndDate = document.getElementById('summary-end-date');
+  const summaryMonthlyInterest = document.getElementById('summary-monthly-interest');
+  const summaryTotalExpected = document.getElementById('summary-total-expected');
+
+  function updateLoanSummary() {
+    const currency = currencySelect.value;
+    let interestRate = parseFloat(interestRateInput.value) || 0;
+    let principal = parseFloat(principalInput.value) || 0;
+    let termMonths = parseInt(termMonthsInput.value) || 0;
+    const startDate = startDateInput.value;
+
+    // Update interest rate and currency symbol based on currency
+    if (currency === 'GHS') {
+      interestRateInput.value = '10.00';
+      currencySymbol.textContent = '₵';
+      interestRate = 10.00;
+    } else if (currency === 'USD') {
+      interestRateInput.value = '9.00';
+      currencySymbol.textContent = '$';
+      interestRate = 9.00;
+    }
+
+    // Update start date
+    summaryStartDate.textContent = startDate || '-';
+
+    // Calculate and update end date
+    if (startDate && termMonths > 0) {
+      const start = new Date(startDate);
+      const end = new Date(start);
+      end.setMonth(start.getMonth() + termMonths);
+      summaryEndDate.textContent = end.toISOString().split('T')[0];
+    } else {
+      summaryEndDate.textContent = '-';
+    }
+
+    // Calculate monthly interest payment and total expected amount (interest rate as monthly rate)
+    let monthlyInterest = (principal * interestRate) / 100;
+    let totalInterest = monthlyInterest * termMonths;
+    let totalExpected = principal + totalInterest;
+
+    // Update summary fields
+    summaryMonthlyInterest.textContent = monthlyInterest > 0 ? `${currencySymbol.textContent}${monthlyInterest.toFixed(2)}` : '-';
+    summaryTotalExpected.textContent = totalExpected > 0 ? `${currencySymbol.textContent}${totalExpected.toFixed(2)}` : '-';
+
+    // Update summary when additional principal is added (only when editing)
+    const additionalPrincipalInput = document.querySelector('input[name="additional_principal"]');
+    if (additionalPrincipalInput) {
+      const additionalPrincipal = parseFloat(additionalPrincipalInput.value) || 0;
+      if (additionalPrincipal > 0) {
+        principal += additionalPrincipal;
+        monthlyInterest = (principal * interestRate) / 100;
+        totalInterest = monthlyInterest * termMonths;
+        totalExpected = principal + totalInterest;
+        summaryMonthlyInterest.textContent = monthlyInterest > 0 ? `${currencySymbol.textContent}${monthlyInterest.toFixed(2)}` : '-';
+        summaryTotalExpected.textContent = totalExpected > 0 ? `${currencySymbol.textContent}${totalExpected.toFixed(2)}` : '-';
+      }
+    }
+  }
+
+  // Event listeners for dynamic updates
+  currencySelect.addEventListener('change', updateLoanSummary);
+  principalInput.addEventListener('input', updateLoanSummary);
+  termMonthsInput.addEventListener('input', updateLoanSummary);
+  startDateInput.addEventListener('change', updateLoanSummary);
+  interestRateInput.addEventListener('input', updateLoanSummary);
+
+  // Add event listener for additional principal if present
+  const additionalPrincipalInput = document.querySelector('input[name="additional_principal"]');
+  if (additionalPrincipalInput) {
+    additionalPrincipalInput.addEventListener('input', updateLoanSummary);
+  }
+
+  // Initial update on page load
+  updateLoanSummary();
+});
+</script>
+
+<style>
+  /* Borrower suggestions dropdown styling */
+  #borrower-suggestions {
+    position: absolute;
+    z-index: 1000;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+  }
+  #borrower-suggestions .dropdown-item {
+    cursor: pointer;
+  }
+  #borrower-suggestions .dropdown-item:hover {
+    background-color: #e9ecef;
+  }
+</style>
+{% endblock %}

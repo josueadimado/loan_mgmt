@@ -1,0 +1,9 @@
+venv/
+*.pyc
+__pycache__/
+db.sqlite3
+static/
+.env
+*.log
+celerybeat-schedule.db
+dump.rdb

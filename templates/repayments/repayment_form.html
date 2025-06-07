@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}
+  Add Repayment — LoanMgmt
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="card shadow-lg mx-auto border-0" style="max-width: 900px;">
+    <div class="card-header bg-primary text-white">
+      <h3 class="card-title mb-0" id="repayment-header">
+        {% if selected_borrower %}
+          Repayment for {{ selected_borrower }}
+        {% else %}
+          Add Repayment
+        {% endif %}
+      </h3>
+    </div>
+    <div class="card-body p-4">
+      <form method="post">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <!-- Section: Repayment Details -->
+        <h5 class="mb-3 text-muted">Repayment Details</h5>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="form-label fw-medium">
+              Loan
+              <span class="text-danger">*</span>
+            </label>
+            {{ form.loan|add_class:"selectpicker"|attr:"data-live-search:true" }}
+            {% if form.loan.errors %}
+              <div class="text-danger small">{{ form.loan.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-medium">
+              Date
+              <span class="text-danger">*</span>
+            </label>
+            {{ form.date|add_class:"form-control" }}
+            {% if form.date.errors %}
+              <div class="text-danger small">{{ form.date.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-medium">
+              Amount
+              <span class="text-danger">*</span>
+            </label>
+            {{ form.amount|add_class:"form-control" }}
+            {% if form.amount.errors %}
+              <div class="text-danger small">{{ form.amount.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-medium">
+              Method
+              <span class="text-danger">*</span>
+            </label>
+            {{ form.method|add_class:"form-select" }}
+            {% if form.method.errors %}
+              <div class="text-danger small">{{ form.method.errors }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="d-flex justify-content-end gap-2">
+          <a href="{% url 'repayments:repayment-list' %}" class="btn btn-outline-secondary">
+            Cancel
+          </a>
+          <button type="submit" class="btn btn-primary">
+            Add Repayment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize Bootstrap Select for the loan field
+  console.log('Initializing selectpicker for loan field...');
+  $('.selectpicker').selectpicker({
+    liveSearch: true,
+    noneSelectedText: 'Select a loan',
+    selectedTextFormat: 'values'
+  });
+  console.log('Selectpicker initialized:', $('.selectpicker').length);
+
+  // Function to fetch borrower name based on loan ID
+  function updateHeader(loanId) {
+    if (!loanId) {
+      document.getElementById('repayment-header').textContent = 'Add Repayment';
+      return;
+    }
+
+    fetch(`/loans/borrowers/search/?loan_id=${loanId}`, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => {
+      console.log('Fetch borrower response status:', response.status);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('Borrower data:', data);
+      if (data.borrower_name) {
+        document.getElementById('repayment-header').textContent = `Repayment for ${data.borrower_name}`;
+      } else {
+        document.getElementById('repayment-header').textContent = 'Add Repayment';
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching borrower:', error);
+      document.getElementById('repayment-header').textContent = 'Add Repayment';
+    });
+  }
+
+  // Update header when loan selection changes
+  const loanSelect = document.querySelector('select[name="loan"]');
+  loanSelect.addEventListener('change', function() {
+    const loanId = this.value;
+    updateHeader(loanId);
+  });
+
+  // Initial header update based on pre-selected loan
+  const initialLoanId = loanSelect.value;
+  updateHeader(initialLoanId);
+});
+</script>
+
+<style>
+  /* Borrower suggestions dropdown styling */
+  #borrower-suggestions {
+    position: absolute;
+    z-index: 1000;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+  }
+  #borrower-suggestions .dropdown-item {
+    cursor: pointer;
+  }
+  #borrower-suggestions .dropdown-item:hover {
+    background-color: #e9ecef;
+  }
+</style>
+{% endblock %}

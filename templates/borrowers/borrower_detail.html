@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}Customer Details — LoanMgmt{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="modal-title">Customer Details</h5>
+  <div>
+    <a href="{% url 'borrowers:borrower-statement' borrower.id %}" class="btn btn-info me-2">
+      <i class="bi bi-file-earmark-text me-1"></i> View Statement
+    </a>
+    <a href="{% url 'borrowers:borrower-statement' borrower.id %}?print=1" class="btn btn-success me-2">
+      <i class="bi bi-printer me-1"></i> Print Statement
+    </a>
+    <a href="{% url 'borrowers:borrower-list' %}" class="btn btn-outline-secondary">
+      ← Back
+    </a>
+  </div>
+</div>
+
+<!-- Personal Information -->
+<section class="mb-4">
+  <div class="d-flex align-items-center mb-2">
+    <i class="bi bi-person-circle fs-4 me-2"></i>
+    <h6 class="mb-0">Personal Information</h6>
+  </div>
+  <div class="card p-3">
+    <p><i class="bi bi-person me-1"></i>
+       <strong>Name:</strong> {{ borrower.first_name }} {{ borrower.last_name }}</p>
+    <p><i class="bi bi-envelope me-1"></i>
+       <strong>Email:</strong> {{ borrower.email }}</p>
+    <p><i class="bi bi-telephone me-1"></i>
+       <strong>Phone:</strong> {{ borrower.phone_number }}</p>
+    <p><i class="bi bi-geo-alt me-1"></i>
+       <strong>Address:</strong> {{ borrower.address }}</p>
+    <p><i class="bi bi-geo-alt-fill me-1"></i>
+       <strong>Region:</strong> {{ borrower.get_region_display }}</p>
+  </div>
+</section>
+
+<!-- Customer Identification -->
+<section class="mb-4">
+  <div class="d-flex align-items-center mb-2">
+    <i class="bi bi-shield-lock-fill fs-4 me-2"></i>
+    <h6 class="mb-0">Customer Identification</h6>
+  </div>
+  <div class="card p-3">
+    <p><strong>Document Type:</strong>
+       {{ borrower.get_id_doc_type_display|default:"N/A" }}</p>
+    <p><strong>Document Number:</strong>
+       {{ borrower.id_doc_number|default:"N/A" }}</p>
+    <p><strong>Expiry Date:</strong>
+       {{ borrower.id_doc_expiry|date:"Y-m-d"|default:"N/A" }}</p>
+    {% if borrower.id_doc_file %}
+    <p>
+      <a href="{{ borrower.id_doc_file.url }}" target="_blank">
+        <i class="bi bi-file-earmark-text me-1"></i> View Document
+      </a>
+    </p>
+    {% endif %}
+  </div>
+</section>
+
+<!-- Guarantor Information -->
+<section class="mb-4">
+  <div class="d-flex align-items-center mb-2">
+    <i class="bi bi-person-lines-fill fs-4 me-2"></i>
+    <h6 class="mb-0">Guarantor Information</h6>
+  </div>
+  <div class="card p-3">
+    <p><strong>Name:</strong> {{ borrower.guarantor_name }}</p>
+    <p><strong>Relationship:</strong> {{ borrower.guarantor_relationship }}</p>
+    <p><strong>Phone:</strong> {{ borrower.guarantor_phone }}</p>
+    <p><strong>Address:</strong> {{ borrower.guarantor_address }}</p>
+  </div>
+</section>
+
+<!-- Guarantor Identification -->
+<section class="mb-4">
+  <div class="d-flex align-items-center mb-2">
+    <i class="bi bi-shield-shaded fs-4 me-2"></i>
+    <h6 class="mb-0">Guarantor Identification</h6>
+  </div>
+  <div class="card p-3">
+    <p><strong>Document Type:</strong>
+       {{ borrower.get_guarantor_id_type_display|default:"N/A" }}</p>
+    <p><strong>Document Number:</strong>
+       {{ borrower.guarantor_id_number|default:"N/A" }}</p>
+    <p><strong>Expiry Date:</strong>
+       {{ borrower.guarantor_id_expiry|date:"Y-m-d"|default:"N/A" }}</p>
+    {% if borrower.guarantor_id_file %}
+    <p>
+      <a href="{{ borrower.guarantor_id_file.url }}" target="_blank">
+        <i class="bi bi-file-earmark-text me-1"></i> View Document
+      </a>
+    </p>
+    {% endif %}
+  </div>
+</section>
+
+<!-- Additional Documents -->
+{% if extra_docs %}
+<section>
+  <div class="d-flex align-items-center mb-2">
+    <i class="bi bi-folder-fill fs-4 me-2"></i>
+    <h6 class="mb-0">Additional Documents</h6>
+  </div>
+  <div class="card p-3">
+    <ul class="list-unstyled mb-0">
+      {% for doc in extra_docs %}
+      <li>
+        <a href="{{ doc.document.url }}" target="_blank">
+          <i class="bi bi-file-earmark me-1"></i>
+          {{ doc.document.name|slice:"-30:" }}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

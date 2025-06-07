@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+{% block title %}Settings — LoanMgmt{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h2 class="h4 mb-4">Account Settings</h2>
+
+          <!-- Display Messages -->
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <!-- Update Details Form -->
+          <h5 class="mb-3">Update Your Details</h5>
+          <form method="post" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="update_details" value="true">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">{{ user_form.first_name.label }}</label>
+                {{ user_form.first_name|add_class:"form-control" }}
+                {% if user_form.first_name.errors %}
+                  <div class="text-danger">{{ user_form.first_name.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">{{ user_form.last_name.label }}</label>
+                {{ user_form.last_name|add_class:"form-control" }}
+                {% if user_form.last_name.errors %}
+                  <div class="text-danger">{{ user_form.last_name.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">{{ user_form.email.label }}</label>
+                {{ user_form.email|add_class:"form-control" }}
+                {% if user_form.email.errors %}
+                  <div class="text-danger">{{ user_form.email.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">{{ user_form.phone_number.label }}</label>
+                {{ user_form.phone_number|add_class:"form-control" }}
+                <small class="form-text text-muted">{{ user_form.phone_number.help_text }}</small>
+                {% if user_form.phone_number.errors %}
+                  <div class="text-danger">{{ user_form.phone_number.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="mt-4">
+              <button type="submit" class="btn btn-primary">Update Details</button>
+              <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+          </form>
+
+          <!-- Password Change Form -->
+          <h5 class="mt-5 mb-3">Change Password</h5>
+          <form method="post" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="change_password" value="true">
+            <div class="row g-3">
+              <div class="col-md-12">
+                <label class="form-label">{{ password_form.old_password.label }}</label>
+                {{ password_form.old_password }}
+                {% if password_form.old_password.errors %}
+                  <div class="text-danger">{{ password_form.old_password.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-12">
+                <label class="form-label">{{ password_form.new_password1.label }}</label>
+                {{ password_form.new_password1 }}
+                {% if password_form.new_password1.errors %}
+                  <div class="text-danger">{{ password_form.new_password1.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-12">
+                <label class="form-label">{{ password_form.new_password2.label }}</label>
+                {{ password_form.new_password2 }}
+                {% if password_form.new_password2.errors %}
+                  <div class="text-danger">{{ password_form.new_password2.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="mt-4">
+              <button type="submit" class="btn btn-primary">Change Password</button>
+              <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
