@@ -1,0 +1,36 @@
+/* Light gray page background */
+body.bg-light {
+  background-color: #f2f4f6 !important;
+}
+
+/* Navbar brand styling */
+.navbar-brand {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+/* Card and table spacing */
+.card, .table {
+  margin-bottom: 2rem;
+}
+
+/* Override Bootstrap table headers */
+.table thead th {
+  background-color: #e9ecef;
+  border-bottom: 2px solid #dee2e6;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: #0d6efd;
+  border: none;
+}
+
+/* Footer (optional) */
+footer {
+  text-align: center;
+  padding: 1rem 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+}

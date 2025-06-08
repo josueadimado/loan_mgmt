@@ -2,8 +2,10 @@ venv/
 *.pyc
 __pycache__/
 db.sqlite3
-static/
 .env
 *.log
 celerybeat-schedule.db
 dump.rdb
+wkhtmltox-0.12.6-1.macos-cocoa.pkg
+loans_data.json
+loan_mgmt_data.json
