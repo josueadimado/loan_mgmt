@@ -1,21 +1,17 @@
 {# templates/borrowers/borrower_form.html #}
 {% extends 'base.html' %}
 {% load widget_tweaks %}
-
 {% block title %}
   {% if borrower %}Edit Borrower{% else %}New Borrower{% endif %} — LoanMgmt
 {% endblock %}
-
 {% block content %}
 <div class="card shadow-sm mb-4">
   <div class="card-body">
     <h2 class="h4 mb-4">
       {% if borrower %}Edit{% else %}New{% endif %} Borrower
     </h2>
-
     <form method="post" enctype="multipart/form-data" id="borrower-form" novalidate>
       {% csrf_token %}
-
       {% if form.errors %}
         <div class="alert alert-danger">
           <ul class="mb-0">
@@ -30,7 +26,6 @@
           </ul>
         </div>
       {% endif %}
-
       <!-- Personal Information -->
       <h6 class="form-section-heading">
         <i class="bi bi-person-circle"></i> Personal Information
@@ -63,7 +58,6 @@
               <span class="required-asterisk">*</span>
             {% endif %}
           </label>
-          <input type="hidden" name="original_phone_number" id="original-phone-number" value="{{ form.phone_number.initial|default_if_none:'' }}">
           {{ form.phone_number }}
           <div class="invalid-feedback"></div>
         </div>
@@ -98,7 +92,6 @@
           <div class="invalid-feedback">This field is required.</div>
         </div>
       </div>
-
       <!-- Customer Identification -->
       <h6 class="form-section-heading">
         <i class="bi bi-shield-lock-fill"></i> Customer Identification
@@ -145,7 +138,6 @@
           <div class="invalid-feedback">This field is required.</div>
         </div>
       </div>
-
       <!-- Guarantor Information -->
       <h6 class="form-section-heading">
         <i class="bi bi-person-lines-fill"></i> Guarantor Information
@@ -178,7 +170,6 @@
               <span class="required-asterisk">*</span>
             {% endif %}
           </label>
-          <input type="hidden" name="original_guarantor_phone" id="original-guarantor-phone" value="{{ form.guarantor_phone.initial|default_if_none:'' }}">
           {{ form.guarantor_phone }}
           <div class="invalid-feedback"></div>
         </div>
@@ -193,7 +184,6 @@
           <div class="invalid-feedback">This field is required.</div>
         </div>
       </div>
-
       <!-- Guarantor Identification -->
       <h6 class="form-section-heading">
         <i class="bi bi-shield-shaded"></i> Guarantor Identification
@@ -240,7 +230,6 @@
           <div class="invalid-feedback">This field is required.</div>
         </div>
       </div>
-
       <!-- Additional Documents -->
       <h6 class="form-section-heading">
         <i class="bi bi-folder-fill"></i> Additional Documents
@@ -251,7 +240,6 @@
         </label>
         {{ form.additional_docs|add_class:"form-control" }}
       </div>
-
       <div class="mt-4 d-flex gap-2">
         <button type="submit" class="btn btn-primary">
           {% if borrower %}Update{% else %}Create{% endif %}
@@ -261,7 +249,6 @@
     </form>
   </div>
 </div>
-
 <script>
   document.addEventListener('DOMContentLoaded', function(){
     {% if form.errors %}
@@ -275,12 +262,6 @@
       };
       console.log('Form errors:', errors);
     {% endif %}
-
-    const originalPhoneNumber = document.getElementById('original-phone-number').value;
-    const originalGuarantorPhone = document.getElementById('original-guarantor-phone').value;
-    console.log('Original phone number (hidden field):', originalPhoneNumber);
-    console.log('Original guarantor phone (hidden field):', originalGuarantorPhone);
-
     // Real-time validation for required fields
     const form = document.getElementById('borrower-form');
     form.querySelectorAll('input[required], textarea[required], select[required]').forEach(input => {

@@ -1,3 +1,4 @@
+# loans/models.py
 from django.db import models
 from decimal import Decimal
 from django.utils import timezone
@@ -10,7 +11,6 @@ class LoanProduct(models.Model):
     def __str__(self):
         return self.name
 
-
 class Loan(models.Model):
     CURRENCY_CHOICES = [
         ('GHS', 'Ghana Cedi'),
@@ -21,20 +21,19 @@ class Loan(models.Model):
         ('paid', 'Paid'),
         ('overdue', 'Overdue'),
     ]
-
-    borrower        = models.ForeignKey('borrowers.Borrower', on_delete=models.CASCADE)
-    product         = models.ForeignKey(LoanProduct, on_delete=models.CASCADE)
-    currency        = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='GHS')
-    principal       = models.DecimalField(max_digits=12, decimal_places=2)
-    interest_rate   = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    start_date      = models.DateField()
-    term_months     = models.PositiveIntegerField(default=3)
-    status          = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
-    is_rollover     = models.BooleanField(default=False)
-    rollover_count  = models.PositiveIntegerField(default=0)
+    borrower = models.ForeignKey('borrowers.Borrower', on_delete=models.CASCADE)
+    product = models.ForeignKey(LoanProduct, on_delete=models.CASCADE)
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='GHS')
+    principal = models.DecimalField(max_digits=12, decimal_places=2)
+    interest_rate = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    start_date = models.DateField()
+    term_months = models.PositiveIntegerField(default=3)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    is_rollover = models.BooleanField(default=False)
+    rollover_count = models.PositiveIntegerField(default=0)
     original_term_months = models.PositiveIntegerField(default=3)
-    description     = models.TextField(blank=True, null=True)
-    created_by      = models.ForeignKey(
+    description = models.TextField(blank=True, null=True)
+    created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True
@@ -52,8 +51,11 @@ class Loan(models.Model):
         # Set original_term_months on first save
         if not self.pk and not self.original_term_months:
             self.original_term_months = self.term_months
-        # Update status based on repayments and due date
+        # Save the instance first to ensure it has a primary key
+        super().save(*args, **kwargs)
+        # Update status only after saving (to ensure pk exists)
         self.update_status()
+        # Save again if status changed
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -113,15 +115,18 @@ class Loan(models.Model):
     def update_status(self):
         """Update the loan status based on repayments and due date."""
         from datetime import datetime
+        if not self.pk:  # New instance, no repayments yet
+            self.status = 'active'
+            print(f"Set initial status for new Loan: {self.status}")
+            return
         total_to_pay = self.get_total_to_pay()
         total_paid = self.get_total_paid()
         due_date = self.get_due_date()
         current_date = datetime.now().date()
-
         if total_paid >= total_to_pay:
             self.status = 'paid'
         elif current_date > due_date and total_paid < total_to_pay:
             self.status = 'overdue'
         else:
             self.status = 'active'
-        print(f"Updated status for Loan #{self.id}: {self.status}")  # Debugging
+        print(f"Updated status for Loan #{self.id}: {self.status}")
