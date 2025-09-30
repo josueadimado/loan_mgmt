@@ -217,7 +217,7 @@ class LoanBulkUploadView(View):
                 borrower_phone = BorrowerForm._normalize_ghana_phone(borrower_phone_raw) if borrower_phone_raw else None
                 first_name = (row.get('first_name') or '').strip()
                 last_name = (row.get('last_name') or '').strip()
-                email = (row.get('email') or '').strip()
+                id_card_number = (row.get('id_card_number') or '').strip()
 
                 borrower = None
                 # 1) Try phone match if provided
@@ -226,20 +226,20 @@ class LoanBulkUploadView(View):
                         borrower = Borrower.objects.get(phone_number=borrower_phone)
                     except Borrower.DoesNotExist:
                         borrower = None
-                # 2) Fallback to name (+ optional email) match
+                # 2) Fallback to name (+ optional ID card) match
                 if borrower is None and first_name and last_name:
                     qs = Borrower.objects.filter(first_name__iexact=first_name, last_name__iexact=last_name)
-                    if email:
-                        qs = qs.filter(email__iexact=email)
+                    if id_card_number:
+                        qs = qs.filter(id_doc_number__iexact=id_card_number)
                     count = qs.count()
                     if count == 1:
                         borrower = qs.first()
                     elif count == 0:
-                        raise ValueError(f'Borrower not found by name {first_name} {last_name}{" / " + email if email else ""}')
+                        raise ValueError(f'Borrower not found by name {first_name} {last_name}{" / ID: " + id_card_number if id_card_number else ""}')
                     else:
-                        raise ValueError(f'Multiple borrowers match name {first_name} {last_name}. Please include phone or email.')
+                        raise ValueError(f'Multiple borrowers match name {first_name} {last_name}. Please include phone or ID card number.')
                 if borrower is None:
-                    raise ValueError('Missing or unmatched borrower (provide borrower_phone or name)')
+                    raise ValueError('Missing or unmatched borrower (provide borrower_phone or name+ID)')
                 product_name = (row.get('product_name') or 'Standard').strip() or 'Standard'
                 product, _ = LoanProduct.objects.get_or_create(name=product_name)
                 currency = (row.get('currency') or 'GHS').strip() or 'GHS'
@@ -305,17 +305,17 @@ class LoanBulkUploadView(View):
 
 class LoanBulkTemplateCSVView(View):
     def get(self, request, *args, **kwargs):
-        headers = ['first_name','last_name','email','borrower_phone','product_name','currency','principal','interest_rate','start_date','term_months','status','is_rollover','rollover_count','description']
+        headers = ['first_name','last_name','id_card_number','borrower_phone','product_name','currency','principal','interest_rate','start_date','term_months','status','is_rollover','rollover_count','description']
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="loans_template.csv"'
         writer = csv.writer(response)
         writer.writerow(headers)
-        writer.writerow(['John','Doe','john@example.com','2332XXXXXXXX','Standard','GHS','1000.00','10','2025-01-15','3','active','0','0','January issuance'])
+        writer.writerow(['John','Doe','GHA-123456789-0','2332XXXXXXXX','Standard','GHS','1000.00','10','2025-01-15','3','active','0','0','January issuance'])
         return response
 
 class LoanBulkExportCSVView(View):
     def get(self, request, *args, **kwargs):
-        headers = ['first_name','last_name','email','borrower_phone','product_name','currency','principal','interest_rate','start_date','term_months','status','is_rollover','rollover_count','description']
+        headers = ['first_name','last_name','id_card_number','borrower_phone','product_name','currency','principal','interest_rate','start_date','term_months','status','is_rollover','rollover_count','description']
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="loans_export.csv"'
         writer = csv.writer(response)
@@ -324,7 +324,7 @@ class LoanBulkExportCSVView(View):
             writer.writerow([
                 loan.borrower.first_name or '',
                 loan.borrower.last_name or '',
-                loan.borrower.email or '',
+                loan.borrower.id_doc_number or '',
                 str(loan.borrower.phone_number or ''),
                 loan.product.name if loan.product else 'Standard',
                 loan.currency,

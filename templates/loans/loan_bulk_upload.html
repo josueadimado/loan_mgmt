@@ -5,7 +5,7 @@
   <div class="card-body">
     <h2 class="h4 mb-4">Bulk Upload Loans</h2>
     <p class="text-muted">CSV columns (required unless noted):
-      <code>borrower_phone,product_name,currency,principal,interest_rate,start_date,term_months,status,is_rollover,rollover_count,description</code>
+      <code>first_name,last_name,id_card_number,borrower_phone,product_name,currency,principal,interest_rate,start_date,term_months,status,is_rollover,rollover_count,description</code>
     </p>
     <div class="mb-3 d-flex gap-2">
       <a class="btn btn-outline-secondary btn-sm" href="{% url 'loans:loan-bulk-template' %}">Download blank template (CSV)</a>
