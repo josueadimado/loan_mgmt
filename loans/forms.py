@@ -1,4 +1,16 @@
 from django import forms
+
+
+class BulkLoanUploadForm(forms.Form):
+    file = forms.FileField(
+        label="CSV File",
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.csv'})
+    )
+    help_text = (
+        "CSV columns: borrower_phone,product_name,currency,principal,interest_rate,start_date,term_months,status,is_rollover,rollover_count,description"
+    )
+
+from django import forms
 from .models import Loan
 
 class LoanForm(forms.ModelForm):

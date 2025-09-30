@@ -9,3 +9,7 @@ dump.rdb
 wkhtmltox-0.12.6-1.macos-cocoa.pkg
 loans_data.json
 loan_mgmt_data.json
+# Ignore local data files
+Data/**
+data/**
+*.xlsx

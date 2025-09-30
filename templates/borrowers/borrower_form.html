@@ -59,11 +59,12 @@
             {% endif %}
           </label>
           {{ form.phone_number }}
+          <div class="form-text">Enter Ghana number. We store it as 233XXXXXXXXX. Start typing after 233.</div>
           <div class="invalid-feedback"></div>
         </div>
         <div class="col-md-3">
           <label class="form-label">
-            {{ form.email.label }}
+            {{ form.email.label }} <span class="text-muted">(optional)</span>
             {% if form.email.field.required %}
               <span class="required-asterisk">*</span>
             {% endif %}
@@ -73,7 +74,7 @@
         </div>
         <div class="col-12">
           <label class="form-label">
-            {{ form.address.label }}
+            {{ form.address.label }} <span class="text-muted">(optional)</span>
             {% if form.address.field.required %}
               <span class="required-asterisk">*</span>
             {% endif %}
@@ -83,7 +84,7 @@
         </div>
         <div class="col-md-4">
           <label class="form-label">
-            {{ form.region.label }}
+            {{ form.region.label }} <span class="text-muted">(optional)</span>
             {% if form.region.field.required %}
               <span class="required-asterisk">*</span>
             {% endif %}
@@ -99,37 +100,43 @@
       <div class="row g-3 mb-4">
         <div class="col-md-3">
           <label class="form-label">
-            {{ form.id_doc_type.label }}
+            {{ form.id_doc_type.label }} <span class="text-muted">(optional)</span>
             {% if form.id_doc_type.field.required %}
               <span class="required-asterisk">*</span>
             {% endif %}
           </label>
           {{ form.id_doc_type|add_class:"form-select" }}
-          <div class="invalid-feedback">This field is required.</div>
+          {% if form.id_doc_type.field.required %}
+            <div class="invalid-feedback">This field is required.</div>
+          {% endif %}
         </div>
         <div class="col-md-3">
           <label class="form-label">
-            {{ form.id_doc_number.label }}
+            {{ form.id_doc_number.label }} <span class="text-muted">(optional)</span>
             {% if form.id_doc_number.field.required %}
               <span class="required-asterisk">*</span>
             {% endif %}
           </label>
           {{ form.id_doc_number|add_class:"form-control" }}
-          <div class="invalid-feedback">This field is required.</div>
+          {% if form.id_doc_number.field.required %}
+            <div class="invalid-feedback">This field is required.</div>
+          {% endif %}
         </div>
         <div class="col-md-3">
           <label class="form-label">
-            {{ form.id_doc_expiry.label }}
+            {{ form.id_doc_expiry.label }} <span class="text-muted">(optional)</span>
             {% if form.id_doc_expiry.field.required %}
               <span class="required-asterisk">*</span>
             {% endif %}
           </label>
           {{ form.id_doc_expiry|add_class:"form-control" }}
-          <div class="invalid-feedback">This field is required.</div>
+          {% if form.id_doc_expiry.field.required %}
+            <div class="invalid-feedback">This field is required.</div>
+          {% endif %}
         </div>
         <div class="col-md-3">
           <label class="form-label">
-            {{ form.id_doc_file.label }}
+            {{ form.id_doc_file.label }} <span class="text-muted">(optional)</span>
             {% if form.id_doc_file.field.required %}
               <span class="required-asterisk">*</span>
             {% endif %}
@@ -145,7 +152,7 @@
       <div class="row g-3 mb-4">
         <div class="col-md-4">
           <label class="form-label">
-            {{ form.guarantor_name.label }}
+            {{ form.guarantor_name.label }} <span class="text-muted">(optional)</span>
             {% if form.guarantor_name.field.required %}
               <span class="required-asterisk">*</span>
             {% endif %}
@@ -155,7 +162,7 @@
         </div>
         <div class="col-md-4">
           <label class="form-label">
-            {{ form.guarantor_relationship.label }}
+            {{ form.guarantor_relationship.label }} <span class="text-muted">(optional)</span>
             {% if form.guarantor_relationship.field.required %}
               <span class="required-asterisk">*</span>
             {% endif %}
@@ -175,7 +182,7 @@
         </div>
         <div class="col-12">
           <label class="form-label">
-            {{ form.guarantor_address.label }}
+            {{ form.guarantor_address.label }} <span class="text-muted">(optional)</span>
             {% if form.guarantor_address.field.required %}
               <span class="required-asterisk">*</span>
             {% endif %}
@@ -191,7 +198,7 @@
       <div class="row g-3 mb-4">
         <div class="col-md-3">
           <label class="form-label">
-            {{ form.guarantor_id_type.label }}
+            {{ form.guarantor_id_type.label }} <span class="text-muted">(optional)</span>
             {% if form.guarantor_id_type.field.required %}
               <span class="required-asterisk">*</span>
             {% endif %}
@@ -201,7 +208,7 @@
         </div>
         <div class="col-md-3">
           <label class="form-label">
-            {{ form.guarantor_id_number.label }}
+            {{ form.guarantor_id_number.label }} <span class="text-muted">(optional)</span>
             {% if form.guarantor_id_number.field.required %}
               <span class="required-asterisk">*</span>
             {% endif %}
@@ -211,7 +218,7 @@
         </div>
         <div class="col-md-3">
           <label class="form-label">
-            {{ form.guarantor_id_expiry.label }}
+            {{ form.guarantor_id_expiry.label }} <span class="text-muted">(optional)</span>
             {% if form.guarantor_id_expiry.field.required %}
               <span class="required-asterisk">*</span>
             {% endif %}
@@ -221,7 +228,7 @@
         </div>
         <div class="col-md-3">
           <label class="form-label">
-            {{ form.guarantor_id_file.label }}
+            {{ form.guarantor_id_file.label }} <span class="text-muted">(optional)</span>
             {% if form.guarantor_id_file.field.required %}
               <span class="required-asterisk">*</span>
             {% endif %}

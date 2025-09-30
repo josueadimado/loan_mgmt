@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Bulk Upload Loans — LoanMgmt{% endblock %}
+{% block content %}
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <h2 class="h4 mb-4">Bulk Upload Loans</h2>
+    <p class="text-muted">CSV columns (required unless noted):
+      <code>borrower_phone,product_name,currency,principal,interest_rate,start_date,term_months,status,is_rollover,rollover_count,description</code>
+    </p>
+    <div class="mb-3 d-flex gap-2">
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'loans:loan-bulk-template' %}">Download blank template (CSV)</a>
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'loans:loan-bulk-export' %}">Download current loans (CSV)</a>
+    </div>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">{{ form.file.label }}</label>
+        {{ form.file }}
+      </div>
+      <button type="submit" class="btn btn-primary">Upload</button>
+      <a href="{% url 'loans:loan-list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+

@@ -9,7 +9,7 @@ import csv
 from datetime import datetime
 from decimal import Decimal
 from .models import Borrower, BorrowerDocument
-from .forms import BorrowerForm
+from .forms import BorrowerForm, BulkBorrowerUploadForm
 from loans.models import Loan
 
 class BorrowerListView(ListView):
@@ -20,6 +20,7 @@ class BorrowerListView(ListView):
         ctx = super().get_context_data(**kwargs)
         ctx['count'] = Borrower.objects.count()
         ctx['form'] = BorrowerForm()
+        ctx['bulk_form'] = BulkBorrowerUploadForm()
         return ctx
 
 class BorrowerCreateView(CreateView):
@@ -150,6 +151,95 @@ class BorrowerExportView(View):
         )
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         wb.save(response)
+        return response
+
+class BorrowerBulkUploadView(View):
+    template_name = 'borrowers/borrower_bulk_upload.html'
+    def get(self, request, *args, **kwargs):
+        form = BulkBorrowerUploadForm()
+        return render(request, self.template_name, { 'form': form })
+    def post(self, request, *args, **kwargs):
+        form = BulkBorrowerUploadForm(request.POST, request.FILES)
+        if not form.is_valid():
+            return render(request, self.template_name, { 'form': form })
+        file = request.FILES['file']
+        decoded = file.read().decode('utf-8', errors='ignore').splitlines()
+        reader = csv.DictReader(decoded)
+        created_count = 0
+        updated_count = 0
+        errors = []
+        for idx, row in enumerate(reader, start=2):
+            try:
+                first_name = (row.get('first_name') or '').strip()
+                last_name = (row.get('last_name') or '').strip()
+                phone_raw = (row.get('phone_number') or '').strip()
+                email = (row.get('email') or '').strip() or None
+                address = (row.get('address') or '').strip() or None
+                region = (row.get('region') or '').strip() or None
+                if not first_name and not last_name:
+                    raise ValueError('Missing first_name/last_name')
+                # Normalize phone to Ghana format using the form helper
+                phone_number = BorrowerForm._normalize_ghana_phone(phone_raw) if phone_raw else None
+                borrower, created = Borrower.objects.get_or_create(
+                    phone_number=phone_number,
+                    defaults={
+                        'first_name': first_name,
+                        'last_name': last_name,
+                        'email': email,
+                        'address': address,
+                        'region': region,
+                    }
+                )
+                if created:
+                    created_count += 1
+                else:
+                    # update basic fields if provided
+                    updated = False
+                    for field, value in [('first_name', first_name), ('last_name', last_name), ('email', email), ('address', address), ('region', region)]:
+                        if value and getattr(borrower, field) != value:
+                            setattr(borrower, field, value)
+                            updated = True
+                    if updated:
+                        borrower.save()
+                        updated_count += 1
+            except Exception as exc:
+                errors.append(f"Row {idx}: {exc}")
+        if created_count:
+            messages.success(request, f"Created {created_count} borrowers.")
+        if updated_count:
+            messages.info(request, f"Updated {updated_count} borrowers.")
+        if errors:
+            messages.warning(request, f"Some rows failed: {'; '.join(errors[:5])}{' ...' if len(errors) > 5 else ''}")
+        return render(request, self.template_name, { 'form': BulkBorrowerUploadForm() })
+
+class BorrowerBulkTemplateCSVView(View):
+    def get(self, request, *args, **kwargs):
+        headers = ['first_name', 'last_name', 'phone_number', 'email', 'address', 'region']
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="borrowers_template.csv"'
+        writer = csv.writer(response)
+        writer.writerow(headers)
+        # Provide a few example rows as guidance (commented values)
+        writer.writerow(['John', 'Doe', '2332XXXXXXXX', 'john@example.com', '123 Street, Accra', 'Greater Accra'])
+        writer.writerow(['Jane', 'Smith', '055XXXXXXX', 'jane@example.com', '456 Road, Kumasi', 'Ashanti'])
+        return response
+
+class BorrowerBulkExportCSVView(View):
+    def get(self, request, *args, **kwargs):
+        headers = ['first_name', 'last_name', 'phone_number', 'email', 'address', 'region']
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="borrowers_export.csv"'
+        writer = csv.writer(response)
+        writer.writerow(headers)
+        for b in Borrower.objects.all().order_by('last_name', 'first_name'):
+            writer.writerow([
+                b.first_name or '',
+                b.last_name or '',
+                str(b.phone_number or ''),
+                b.email or '',
+                b.address or '',
+                b.region or '',
+            ])
         return response
 
 class BorrowerStatementView(View):

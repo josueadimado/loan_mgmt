@@ -2,6 +2,7 @@ import datetime
 import json
 from dateutil.relativedelta import relativedelta
 from django.urls import reverse_lazy
+from django.shortcuts import render
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, View
 from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
@@ -9,9 +10,10 @@ import csv
 from decimal import Decimal
 
 from .models import Loan  # Import Loan from models
-from .forms import LoanForm
+from .forms import LoanForm, BulkLoanUploadForm
 from repayments.models import Repayment
 from borrowers.models import Borrower
+from borrowers.forms import BorrowerForm
 
 class LoanListView(ListView):
     model = Loan
@@ -43,6 +45,7 @@ class LoanListView(ListView):
                 'product_name': loan.product.name if loan.product else '-',
             })
         ctx['loans'] = loan_rows
+        ctx['bulk_form'] = BulkLoanUploadForm()
         return ctx
 
 class LoanCreateView(CreateView):
@@ -190,6 +193,149 @@ class LoanExportView(View):
                 loan.status,
                 due.strftime('%Y-m-d'),
                 loan.product.name if loan.product else '-',
+            ])
+        return response
+
+class LoanBulkUploadView(View):
+    template_name = 'loans/loan_bulk_upload.html'
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name, { 'form': BulkLoanUploadForm() })
+    def post(self, request, *args, **kwargs):
+        form = BulkLoanUploadForm(request.POST, request.FILES)
+        if not form.is_valid():
+            return render(request, self.template_name, { 'form': form })
+        file = request.FILES['file']
+        decoded = file.read().decode('utf-8', errors='ignore').splitlines()
+        reader = csv.DictReader(decoded)
+        created_count = 0
+        updated_count = 0
+        errors = []
+        from .models import LoanProduct
+        for idx, row in enumerate(reader, start=2):
+            try:
+                borrower_phone_raw = (row.get('borrower_phone') or '').strip()
+                borrower_phone = BorrowerForm._normalize_ghana_phone(borrower_phone_raw) if borrower_phone_raw else None
+                first_name = (row.get('first_name') or '').strip()
+                last_name = (row.get('last_name') or '').strip()
+                email = (row.get('email') or '').strip()
+
+                borrower = None
+                # 1) Try phone match if provided
+                if borrower_phone:
+                    try:
+                        borrower = Borrower.objects.get(phone_number=borrower_phone)
+                    except Borrower.DoesNotExist:
+                        borrower = None
+                # 2) Fallback to name (+ optional email) match
+                if borrower is None and first_name and last_name:
+                    qs = Borrower.objects.filter(first_name__iexact=first_name, last_name__iexact=last_name)
+                    if email:
+                        qs = qs.filter(email__iexact=email)
+                    count = qs.count()
+                    if count == 1:
+                        borrower = qs.first()
+                    elif count == 0:
+                        raise ValueError(f'Borrower not found by name {first_name} {last_name}{" / " + email if email else ""}')
+                    else:
+                        raise ValueError(f'Multiple borrowers match name {first_name} {last_name}. Please include phone or email.')
+                if borrower is None:
+                    raise ValueError('Missing or unmatched borrower (provide borrower_phone or name)')
+                product_name = (row.get('product_name') or 'Standard').strip() or 'Standard'
+                product, _ = LoanProduct.objects.get_or_create(name=product_name)
+                currency = (row.get('currency') or 'GHS').strip() or 'GHS'
+                principal = Decimal((row.get('principal') or '0').replace(',', '').strip())
+                interest_rate = row.get('interest_rate')
+                interest_rate = Decimal(interest_rate) if interest_rate not in (None, '',) else None
+                start_date_str = (row.get('start_date') or '').strip()
+                term_months = int((row.get('term_months') or '3').strip())
+                status = (row.get('status') or 'active').strip() or 'active'
+                is_rollover = str(row.get('is_rollover') or '').strip().lower() in ('1', 'true', 'yes', 'y')
+                rollover_count = int((row.get('rollover_count') or '0').strip())
+                description = (row.get('description') or '').strip() or None
+                if not start_date_str:
+                    raise ValueError('Missing start_date')
+                from datetime import datetime as _dt
+                for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y'):
+                    try:
+                        start_date = _dt.strptime(start_date_str, fmt).date()
+                        break
+                    except ValueError:
+                        start_date = None
+                if start_date is None:
+                    raise ValueError(f'Invalid start_date: {start_date_str}')
+                loan, created = Loan.objects.get_or_create(
+                    borrower=borrower,
+                    start_date=start_date,
+                    principal=principal,
+                    defaults={
+                        'product': product,
+                        'currency': currency,
+                        'interest_rate': interest_rate,
+                        'term_months': term_months,
+                        'status': status,
+                        'is_rollover': is_rollover,
+                        'rollover_count': rollover_count,
+                        'description': description,
+                    }
+                )
+                if not created:
+                    changed = False
+                    for f, v in [
+                        ('product', product), ('currency', currency), ('interest_rate', interest_rate),
+                        ('term_months', term_months), ('status', status), ('is_rollover', is_rollover),
+                        ('rollover_count', rollover_count), ('description', description)
+                    ]:
+                        if getattr(loan, f) != v and v is not None:
+                            setattr(loan, f, v)
+                            changed = True
+                    if changed:
+                        loan.save()
+                        updated_count += 1
+                else:
+                    created_count += 1
+            except Exception as exc:
+                errors.append(f"Row {idx}: {exc}")
+        if created_count:
+            messages.success(request, f"Created {created_count} loans.")
+        if updated_count:
+            messages.info(request, f"Updated {updated_count} loans.")
+        if errors:
+            messages.warning(request, f"Some rows failed: {'; '.join(errors[:5])}{' ...' if len(errors) > 5 else ''}")
+        return render(request, self.template_name, { 'form': BulkLoanUploadForm() })
+
+class LoanBulkTemplateCSVView(View):
+    def get(self, request, *args, **kwargs):
+        headers = ['first_name','last_name','email','borrower_phone','product_name','currency','principal','interest_rate','start_date','term_months','status','is_rollover','rollover_count','description']
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="loans_template.csv"'
+        writer = csv.writer(response)
+        writer.writerow(headers)
+        writer.writerow(['John','Doe','john@example.com','2332XXXXXXXX','Standard','GHS','1000.00','10','2025-01-15','3','active','0','0','January issuance'])
+        return response
+
+class LoanBulkExportCSVView(View):
+    def get(self, request, *args, **kwargs):
+        headers = ['first_name','last_name','email','borrower_phone','product_name','currency','principal','interest_rate','start_date','term_months','status','is_rollover','rollover_count','description']
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="loans_export.csv"'
+        writer = csv.writer(response)
+        writer.writerow(headers)
+        for loan in Loan.objects.select_related('borrower','product').all():
+            writer.writerow([
+                loan.borrower.first_name or '',
+                loan.borrower.last_name or '',
+                loan.borrower.email or '',
+                str(loan.borrower.phone_number or ''),
+                loan.product.name if loan.product else 'Standard',
+                loan.currency,
+                f"{loan.principal:.2f}",
+                f"{loan.interest_rate or ''}",
+                loan.start_date.strftime('%Y-%m-%d'),
+                loan.term_months,
+                loan.status,
+                '1' if loan.is_rollover else '0',
+                loan.rollover_count,
+                loan.description or '',
             ])
         return response
 
